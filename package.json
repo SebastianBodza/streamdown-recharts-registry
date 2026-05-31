@@ -1,0 +1,10 @@
+{
+  "name": "streamdown-recharts-registry",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:registry": "node scripts/build-registry.mjs",
+    "check:registry": "npm run build:registry && node -e \"JSON.parse(require('node:fs').readFileSync('registry/streamdown-recharts.json', 'utf8'))\""
+  },
+  "devDependencies": {}
+}
