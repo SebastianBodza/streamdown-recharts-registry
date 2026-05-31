@@ -9,8 +9,58 @@
       "type": "registry:component",
       "files": [
         {
-          "path": "registry/default/streamdown-recharts.tsx",
-          "target": "components/streamdown-recharts.tsx",
+          "path": "registry/default/streamdown-recharts/chart-shell.tsx",
+          "target": "components/streamdown-recharts/chart-shell.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/chart-table.tsx",
+          "target": "components/streamdown-recharts/chart-table.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/charts.tsx",
+          "target": "components/streamdown-recharts/charts.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/downloads.ts",
+          "target": "components/streamdown-recharts/downloads.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/formatters.ts",
+          "target": "components/streamdown-recharts/formatters.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/index.tsx",
+          "target": "components/streamdown-recharts/index.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/loading-placeholder.tsx",
+          "target": "components/streamdown-recharts/loading-placeholder.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/parser.ts",
+          "target": "components/streamdown-recharts/parser.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/renderer.tsx",
+          "target": "components/streamdown-recharts/renderer.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/schema.ts",
+          "target": "components/streamdown-recharts/schema.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-recharts/table.ts",
+          "target": "components/streamdown-recharts/table.ts",
           "type": "registry:component"
         }
       ]

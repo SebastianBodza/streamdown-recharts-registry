@@ -8,7 +8,7 @@
     "streamdown"
   ],
   "registryDependencies": [
-    "https://raw.githubusercontent.com/SebastianBodza/streamdown-recharts-registry/refs/heads/main/registry/streamdown-recharts.json"
+    "https://bitbasti.com/r/streamdown-recharts.json"
   ],
   "files": [
     {

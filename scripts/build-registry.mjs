@@ -1,14 +1,24 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 
-const owner = "SebastianBodza";
-const repo = "streamdown-recharts-registry";
-const branch = "main";
-const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/refs/heads/${branch}`;
-
-const componentPath = "registry/default/streamdown-recharts.tsx";
+const registryBase = "https://bitbasti.com/r";
+const repoUrl = "https://github.com/SebastianBodza/streamdown-recharts-registry";
+const componentDir = "registry/default/streamdown-recharts";
 const examplePath = "registry/default/examples/streamdown-recharts-demo.tsx";
 
-const componentContent = await readFile(componentPath, "utf8");
+const componentFileNames = (await readdir(componentDir)).sort();
+const componentFiles = await Promise.all(
+  componentFileNames.map(async (fileName) => {
+    const path = join(componentDir, fileName);
+
+    return {
+      content: await readFile(path, "utf8"),
+      path,
+      target: `components/streamdown-recharts/${fileName}`,
+      type: "registry:component",
+    };
+  }),
+);
 const exampleContent = await readFile(examplePath, "utf8");
 
 const componentItem = {
@@ -27,14 +37,7 @@ const componentItem = {
     "zod",
   ],
   registryDependencies: ["button", "dropdown-menu"],
-  files: [
-    {
-      path: componentPath,
-      target: "components/streamdown-recharts.tsx",
-      type: "registry:component",
-      content: componentContent,
-    },
-  ],
+  files: componentFiles,
 };
 
 const exampleItem = {
@@ -44,7 +47,7 @@ const exampleItem = {
   description: "Example usage of the Streamdown Recharts renderer.",
   type: "registry:block",
   dependencies: ["streamdown"],
-  registryDependencies: [`${rawBase}/registry/streamdown-recharts.json`],
+  registryDependencies: [`${registryBase}/streamdown-recharts.json`],
   files: [
     {
       path: examplePath,
@@ -57,7 +60,7 @@ const exampleItem = {
 
 const registry = {
   name: "streamdown-recharts-registry",
-  homepage: `https://github.com/${owner}/${repo}`,
+  homepage: repoUrl,
   items: [
     {
       name: componentItem.name,
