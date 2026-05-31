@@ -29,11 +29,11 @@ export const getTableColumns = (spec: RechartsChartSpec): TableColumn[] => {
 };
 
 export const formatTableValue = (
-  value: string | number | undefined,
+  value: string | number | null | undefined,
   series: RechartsSeries | undefined,
   spec: RechartsChartSpec,
 ): string => {
-  if (value === undefined) {
+  if (value === undefined || value === null) {
     return "";
   }
 

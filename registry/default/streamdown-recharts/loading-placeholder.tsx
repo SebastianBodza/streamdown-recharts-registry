@@ -16,9 +16,6 @@ export const ChartLoadingPlaceholder = () => (
           ))}
         </div>
         <div className="absolute bottom-5 left-6 right-6 h-px bg-muted-foreground/20" />
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs text-muted-foreground">
-          Creating chart...
-        </div>
       </div>
     </div>
   </div>

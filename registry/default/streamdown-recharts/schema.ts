@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ChartValueSchema = z.union([z.string(), z.number()]);
+export const ChartValueSchema = z.union([z.string(), z.number(), z.null()]);
 export const ChartDataRowSchema = z.record(z.string(), ChartValueSchema);
 
 export const ChartSeriesSchema = z.object({

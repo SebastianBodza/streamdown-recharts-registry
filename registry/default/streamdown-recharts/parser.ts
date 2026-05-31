@@ -1,39 +1,32 @@
 import { RechartsChartSpecSchema } from "./schema";
 import type { ParseResult } from "./schema";
 
-const isLikelyIncompleteJson = (code: string): boolean => {
-  const trimmedCode = code.trim();
-
-  return trimmedCode === "" || !/[}\]]$/.test(trimmedCode);
-};
-
 export const parseChartSpec = (code: string, isIncomplete?: boolean): ParseResult => {
   if (isIncomplete) {
     return { status: "loading" };
   }
 
+  let parsedJson: unknown;
+
   try {
-    const parsedJson: unknown = JSON.parse(code);
-    const parseResult = RechartsChartSpecSchema.safeParse(parsedJson);
-
-    if (!parseResult.success) {
-      return {
-        status: "invalid",
-        message:
-          parseResult.error.issues[0]?.message ??
-          "Invalid Recharts JSON structure.",
-      };
-    }
-
-    return { status: "valid", spec: parseResult.data };
+    parsedJson = JSON.parse(code);
   } catch {
-    if (isLikelyIncompleteJson(code)) {
-      return { status: "loading" };
-    }
+    // The fence may report complete before the JSON is fully streamed in.
+    // Truncated JSON throws here, so keep showing the loading state rather
+    // than flashing an error mid-stream.
+    return { status: "loading" };
+  }
 
+  const parseResult = RechartsChartSpecSchema.safeParse(parsedJson);
+
+  if (!parseResult.success) {
     return {
       status: "invalid",
-      message: "Could not parse the Recharts JSON.",
+      message:
+        parseResult.error.issues[0]?.message ??
+        "Invalid Recharts JSON structure.",
     };
   }
+
+  return { status: "valid", spec: parseResult.data };
 };

@@ -24,14 +24,14 @@ import { formatNumber, formatTick } from "./formatters";
 import type { RechartsChartSpec, RechartsSeries } from "./schema";
 
 export const chartColors = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-  "hsl(var(--chart-1) / 0.7)",
-  "hsl(var(--chart-2) / 0.7)",
-  "hsl(var(--chart-3) / 0.7)",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "color-mix(in oklch, var(--chart-1) 70%, transparent)",
+  "color-mix(in oklch, var(--chart-2) 70%, transparent)",
+  "color-mix(in oklch, var(--chart-3) 70%, transparent)",
 ];
 
 export const chartHeightClass = "h-[420px]";
@@ -187,8 +187,12 @@ export const PieVisualization = ({ spec }: { spec: RechartsChartSpec }) => {
 };
 
 export const ScatterVisualization = ({ spec }: { spec: RechartsChartSpec }) => {
-  const xKey = spec.xKey ?? "x";
   const series = spec.series[0];
+  const inferredXKey = Object.keys(spec.data[0] ?? {}).find(
+    (key) => key !== series.dataKey,
+  );
+  const xKey = spec.xKey ?? inferredXKey ?? "x";
+  const xIsNumeric = spec.data.every((row) => typeof row[xKey] === "number");
 
   return (
     <ChartFrame>
@@ -198,7 +202,7 @@ export const ScatterVisualization = ({ spec }: { spec: RechartsChartSpec }) => {
           dataKey={xKey}
           name={xKey}
           tickFormatter={(value: number | string) => formatTick(value, spec)}
-          type="number"
+          type={xIsNumeric ? "number" : "category"}
         />
         <YAxis
           dataKey={series.dataKey}
