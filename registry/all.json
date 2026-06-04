@@ -4,6 +4,13 @@
   "title": "Streamdown Recharts",
   "description": "A Streamdown custom renderer for recharts-json code fences with chart/table views and exports.",
   "type": "registry:component",
+  "categories": [
+    "streamdown",
+    "ai",
+    "charts",
+    "data-visualization",
+    "recharts"
+  ],
   "dependencies": [
     "@e965/xlsx",
     "html-to-image",

@@ -1,24 +1,50 @@
-# Streamdown Recharts Registry
+# Streamdown Registry
 
-A small shadcn registry for a Streamdown custom renderer that turns fenced
-`recharts-json` blocks into Recharts visualizations.
+A small [shadcn](https://ui.shadcn.com/docs/registry) registry of **streaming-aware
+[Streamdown](https://streamdown.ai) custom renderers** that upgrade LLM code
+fences into live, interactive components — charts and BPMN diagrams — directly
+inside a streamed Markdown message.
 
-## Install
+![Streamdown](https://img.shields.io/badge/Streamdown-renderers-0d9488)
+![shadcn registry](https://img.shields.io/badge/shadcn-registry-000000?logo=shadcnui)
+![React](https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
+
+**Topics:** `streamdown` · `shadcn-registry` · `ai` · `llm` · `recharts` ·
+`charts` · `data-visualization` · `bpmn` · `diagrams` · `react`
+
+---
+
+## Components
+
+| Component | Fence | What it renders |
+| --- | --- | --- |
+| [Streamdown Recharts](#streamdown-recharts) | ` ```recharts-json ` | Bar, line, area, pie &amp; scatter charts with a table view and CSV/XLSX/PNG export |
+| [Streamdown BPMN](#streamdown-bpmn) | ` ```bpmn ` | Interactive BPMN 2.0 diagrams with pan, zoom, fullscreen and SVG/BPMN export |
+
+Both are **streaming-aware**: while a fence is still arriving they show a skeleton
+instead of flashing a parse error, then upgrade to the live component once the
+block closes.
+
+---
+
+## Streamdown Recharts
+
+<img src="assets/streamdown-recharts.svg" alt="Streamdown Recharts — recharts-json fences rendered as live charts" width="100%" />
+
+The model emits a fenced `recharts-json` block; the renderer parses it, validates
+it with Zod, and draws a [Recharts](https://recharts.org) chart.
+
+### Install
 
 ```bash
 npx shadcn@latest add https://bitbasti.com/r/streamdown-recharts.json
 ```
 
-This installs the renderer as a small component module:
+Installs into `components/streamdown-recharts/` and pulls the `button` and
+`dropdown-menu` primitives plus the chart color variables.
 
-```text
-components/streamdown-recharts/
-```
-
-The registry item also asks shadcn to install the required `button` and
-`dropdown-menu` primitives.
-
-## Usage
+### Wire it up
 
 ```tsx
 import { Streamdown } from "streamdown";
@@ -33,16 +59,14 @@ export function Message({ content }: { content: string }) {
 }
 ```
 
-Then render a chart from markdown:
+Then any `recharts-json` fence in the stream becomes a chart:
 
 ````md
 ```recharts-json
 {
   "chartType": "bar",
   "currency": "USD",
-  "meta": {
-    "title": "Quarterly revenue"
-  },
+  "meta": { "title": "Quarterly revenue" },
   "xKey": "quarter",
   "series": [
     { "dataKey": "revenue", "label": "Revenue", "valueFormat": "currency" }
@@ -55,62 +79,81 @@ Then render a chart from markdown:
 ```
 ````
 
-`locale` and `currency` are optional. If omitted, numbers default to `en-US`
-and currency values default to `USD`.
+`locale` and `currency` are optional (default `en-US` / `USD`). Supported
+`chartType` values: `bar`, `line`, `area`, `pie`, `scatter`.
 
-## AI SDK System Prompt Hint
+---
 
-When using the Vercel AI SDK, add a short system prompt that teaches the model
-when and how to emit `recharts-json` fences.
+## Streamdown BPMN
+
+<img src="assets/streamdown-bpmn.svg" alt="Streamdown BPMN — bpmn fences rendered as interactive BPMN 2.0 diagrams" width="100%" />
+
+The model emits a fenced `bpmn` block with standard BPMN 2.0 XML (including the
+`<bpmndi:BPMNDiagram>` layout); the renderer mounts an interactive
+[bpmn.io](https://bpmn.io) viewer with pan, zoom, fullscreen and SVG/BPMN export.
+
+### Install
+
+```bash
+npx shadcn@latest add https://bitbasti.com/r/streamdown-bpmn.json
+```
+
+Installs into `components/streamdown-bpmn/`.
+
+### Wire it up
+
+`bpmnRenderers` sits right alongside the chart renderer in the same array:
+
+```tsx
+import { Streamdown } from "streamdown";
+import { rechartsRenderers } from "@/components/streamdown-recharts";
+import { bpmnRenderers } from "@/components/streamdown-bpmn";
+
+export function Message({ content }: { content: string }) {
+  return (
+    <Streamdown plugins={{ renderers: [...rechartsRenderers, ...bpmnRenderers] }}>
+      {content}
+    </Streamdown>
+  );
+}
+```
+
+---
+
+## AI SDK system-prompt hint
+
+Teach the model the fence in your system prompt and let it decide when to use it.
 
 ```ts
 import { streamText } from "ai";
 
-const chartSystemPrompt = `
-When the user asks for a chart, return a fenced recharts-json block.
-Use valid JSON only inside the fence.
-Supported chartType values are bar, line, area, pie, and scatter.
-Include locale and currency when relevant, for example "locale": "de-DE" and "currency": "EUR".
+const systemPrompt = `
+When the user asks for a chart, return a fenced recharts-json block
+(chartType: bar | line | area | pie | scatter), valid JSON only.
+When the user describes a workflow, return a fenced bpmn block with valid
+BPMN 2.0 XML including a <bpmndi:BPMNDiagram> layout section.
 `;
 
-const result = streamText({
-  model,
-  system: chartSystemPrompt,
-  messages,
-});
+const result = streamText({ model, system: systemPrompt, messages });
 ```
 
-Example model output:
+---
 
-````md
-```recharts-json
-{
-  "chartType": "line",
-  "locale": "de-DE",
-  "currency": "EUR",
-  "meta": {
-    "title": "Monthly revenue"
-  },
-  "xKey": "month",
-  "series": [
-    { "dataKey": "revenue", "label": "Revenue", "valueFormat": "currency" }
-  ],
-  "data": [
-    { "month": "Jan", "revenue": 12000 },
-    { "month": "Feb", "revenue": 18500 }
-  ]
-}
-```
-````
+## Registry files
 
-## Registry Files
+| File | Purpose |
+| --- | --- |
+| `registry/registry.json` | Registry index (all items) |
+| `registry/streamdown-recharts.json` | Recharts renderer component |
+| `registry/streamdown-recharts-demo.json` | Recharts usage example |
+| `registry/streamdown-bpmn.json` | BPMN renderer component |
+| `registry/streamdown-bpmn-demo.json` | BPMN usage example |
 
-- Component: `registry/streamdown-recharts.json`
-- Example: `registry/streamdown-recharts-demo.json`
-- Index: `registry/registry.json`
-
-Regenerate registry JSON after source edits:
+Regenerate the JSON after editing any source under `registry/default/`:
 
 ```bash
 npm run build:registry
 ```
+
+Each component item is tagged with shadcn `categories` (e.g. `streamdown`, `ai`,
+`charts`, `bpmn`) for discoverability.

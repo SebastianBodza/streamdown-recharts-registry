@@ -7,6 +7,13 @@
       "title": "Streamdown Recharts",
       "description": "A Streamdown custom renderer for recharts-json code fences with chart/table views and exports.",
       "type": "registry:component",
+      "categories": [
+        "streamdown",
+        "ai",
+        "charts",
+        "data-visualization",
+        "recharts"
+      ],
       "files": [
         {
           "path": "registry/default/streamdown-recharts/chart-shell.tsx",
@@ -83,6 +90,13 @@
       "title": "Streamdown BPMN",
       "description": "A Streamdown custom renderer for bpmn code fences that renders interactive BPMN diagrams with zoom, fullscreen, and SVG/BPMN export.",
       "type": "registry:component",
+      "categories": [
+        "streamdown",
+        "ai",
+        "bpmn",
+        "diagrams",
+        "workflow"
+      ],
       "files": [
         {
           "path": "registry/default/streamdown-bpmn/bpmn-navigated-viewer.d.ts",

@@ -43,6 +43,7 @@ const componentItem = {
   description:
     "A Streamdown custom renderer for recharts-json code fences with chart/table views and exports.",
   type: "registry:component",
+  categories: ["streamdown", "ai", "charts", "data-visualization", "recharts"],
   dependencies: [
     "@e965/xlsx",
     "html-to-image",
@@ -96,6 +97,7 @@ const bpmnComponentItem = {
   description:
     "A Streamdown custom renderer for bpmn code fences that renders interactive BPMN diagrams with zoom, fullscreen, and SVG/BPMN export.",
   type: "registry:component",
+  categories: ["streamdown", "ai", "bpmn", "diagrams", "workflow"],
   dependencies: ["bpmn-js", "lucide-react", "streamdown"],
   files: bpmnComponentFiles,
 };
@@ -123,6 +125,7 @@ const toRegistryItem = (item) => ({
   title: item.title,
   description: item.description,
   type: item.type,
+  ...(item.categories ? { categories: item.categories } : {}),
   files: item.files.map(({ content, ...file }) => file),
 });
 

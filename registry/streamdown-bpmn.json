@@ -4,6 +4,13 @@
   "title": "Streamdown BPMN",
   "description": "A Streamdown custom renderer for bpmn code fences that renders interactive BPMN diagrams with zoom, fullscreen, and SVG/BPMN export.",
   "type": "registry:component",
+  "categories": [
+    "streamdown",
+    "ai",
+    "bpmn",
+    "diagrams",
+    "workflow"
+  ],
   "dependencies": [
     "bpmn-js",
     "lucide-react",
