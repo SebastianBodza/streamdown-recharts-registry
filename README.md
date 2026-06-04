@@ -30,7 +30,7 @@ block closes.
 
 ## Streamdown Recharts
 
-<img src="assets/streamdown-recharts.svg" alt="Streamdown Recharts — recharts-json fences rendered as live charts" width="100%" />
+<img src="assets/streamdown-recharts.png" alt="Streamdown Recharts — recharts-json fences rendered as live charts" width="100%" />
 
 The model emits a fenced `recharts-json` block; the renderer parses it, validates
 it with Zod, and draws a [Recharts](https://recharts.org) chart.
@@ -82,11 +82,33 @@ Then any `recharts-json` fence in the stream becomes a chart:
 `locale` and `currency` are optional (default `en-US` / `USD`). Supported
 `chartType` values: `bar`, `line`, `area`, `pie`, `scatter`.
 
+### AI SDK system prompt
+
+Teach the model the chart fence in your system prompt and let it decide when a
+chart helps.
+
+```ts
+import { streamText } from "ai";
+
+const chartSystemPrompt = `
+When the user asks for a chart — or when tabular numbers read better as a
+visualization — respond with a fenced recharts-json block (valid JSON only).
+- chartType: bar | line | area | pie | scatter
+- xKey: category/value axis key (omit for pie)
+- series: array of { dataKey, label }
+- data: array of row objects keyed by xKey and each series dataKey
+- include locale and currency when relevant, e.g. "locale": "de-DE", "currency": "EUR"
+Add a short sentence of context before the chart.
+`;
+
+const result = streamText({ model, system: chartSystemPrompt, messages });
+```
+
 ---
 
 ## Streamdown BPMN
 
-<img src="assets/streamdown-bpmn.svg" alt="Streamdown BPMN — bpmn fences rendered as interactive BPMN 2.0 diagrams" width="100%" />
+<img src="assets/streamdown-bpmn.png" alt="Streamdown BPMN — bpmn fences rendered as interactive BPMN 2.0 diagrams" width="100%" />
 
 The model emits a fenced `bpmn` block with standard BPMN 2.0 XML (including the
 `<bpmndi:BPMNDiagram>` layout); the renderer mounts an interactive
@@ -118,23 +140,24 @@ export function Message({ content }: { content: string }) {
 }
 ```
 
----
+### AI SDK system prompt
 
-## AI SDK system-prompt hint
-
-Teach the model the fence in your system prompt and let it decide when to use it.
+BPMN is verbose, so remind the model of the exact fence and that the XML must
+carry a `BPMNDiagram` layout section so the viewer can place the shapes.
 
 ```ts
 import { streamText } from "ai";
 
-const systemPrompt = `
-When the user asks for a chart, return a fenced recharts-json block
-(chartType: bar | line | area | pie | scatter), valid JSON only.
-When the user describes a workflow, return a fenced bpmn block with valid
-BPMN 2.0 XML including a <bpmndi:BPMNDiagram> layout section.
+const bpmnSystemPrompt = `
+When the user describes a workflow or process, respond with a fenced bpmn block
+containing valid BPMN 2.0 XML.
+- A single <bpmn:definitions> root with the standard bpmn / bpmndi / dc / di namespaces.
+- One <bpmn:process> with startEvent, tasks, gateways and endEvents wired by <bpmn:sequenceFlow>.
+- A <bpmndi:BPMNDiagram> section with BPMNShape / BPMNEdge bounds and waypoints for every node and flow.
+Emit only the XML inside the fence, with a short sentence of context before it.
 `;
 
-const result = streamText({ model, system: systemPrompt, messages });
+const result = streamText({ model, system: bpmnSystemPrompt, messages });
 ```
 
 ---
