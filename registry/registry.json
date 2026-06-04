@@ -7,6 +7,13 @@
       "title": "Streamdown Recharts",
       "description": "A Streamdown custom renderer for recharts-json code fences with chart/table views and exports.",
       "type": "registry:component",
+      "categories": [
+        "streamdown",
+        "ai",
+        "charts",
+        "data-visualization",
+        "recharts"
+      ],
       "files": [
         {
           "path": "registry/default/streamdown-recharts/chart-shell.tsx",
@@ -66,15 +73,37 @@
       ]
     },
     {
-      "name": "streamdown-recharts-demo",
-      "title": "Streamdown Recharts Demo",
-      "description": "Example usage of the Streamdown Recharts renderer.",
-      "type": "registry:block",
+      "name": "streamdown-bpmn",
+      "title": "Streamdown BPMN",
+      "description": "A Streamdown custom renderer for bpmn code fences that renders interactive BPMN diagrams with zoom, fullscreen, and SVG/BPMN export.",
+      "type": "registry:component",
+      "categories": [
+        "streamdown",
+        "ai",
+        "bpmn",
+        "diagrams",
+        "workflow"
+      ],
       "files": [
         {
-          "path": "registry/default/examples/streamdown-recharts-demo.tsx",
-          "target": "components/streamdown-recharts-demo.tsx",
-          "type": "registry:block"
+          "path": "registry/default/streamdown-bpmn/bpmn-navigated-viewer.d.ts",
+          "target": "components/streamdown-bpmn/bpmn-navigated-viewer.d.ts",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-bpmn/bpmn-renderer.tsx",
+          "target": "components/streamdown-bpmn/bpmn-renderer.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-bpmn/bpmn.css",
+          "target": "components/streamdown-bpmn/bpmn.css",
+          "type": "registry:component"
+        },
+        {
+          "path": "registry/default/streamdown-bpmn/index.tsx",
+          "target": "components/streamdown-bpmn/index.tsx",
+          "type": "registry:component"
         }
       ]
     }

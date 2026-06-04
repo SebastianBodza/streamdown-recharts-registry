@@ -1,0 +1,13 @@
+@import "bpmn-js/dist/assets/bpmn-js.css";
+@import "bpmn-js/dist/assets/diagram-js.css";
+
+/*
+ * bpmn-js hardcodes black strokes / black labels and white fills on the
+ * diagram, which is unreadable on a dark theme. The toolbar lives in a
+ * sibling element, so inverting just the rendered SVG recolours the diagram
+ * (black text/lines -> light, white fills -> dark) without touching the
+ * controls. hue-rotate keeps any coloured highlights roughly in place.
+ */
+.dark [data-streamdown="bpmn-canvas"] svg {
+  filter: invert(0.9) hue-rotate(180deg);
+}

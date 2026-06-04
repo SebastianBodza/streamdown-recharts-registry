@@ -1,25 +1,35 @@
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const registryBase = "https://bitbasti.com/r";
 const repoUrl = "https://github.com/SebastianBodza/streamdown-recharts-registry";
 const componentDir = "registry/default/streamdown-recharts";
-const examplePath = "registry/default/examples/streamdown-recharts-demo.tsx";
+const bpmnComponentDir = "registry/default/streamdown-bpmn";
 
-const componentFileNames = (await readdir(componentDir)).sort();
-const componentFiles = await Promise.all(
-  componentFileNames.map(async (fileName) => {
-    const path = join(componentDir, fileName);
+const readComponentFiles = async (dir, targetDir) => {
+  const fileNames = (await readdir(dir)).sort();
 
-    return {
-      content: await readFile(path, "utf8"),
-      path,
-      target: `components/streamdown-recharts/${fileName}`,
-      type: "registry:component",
-    };
-  }),
+  return Promise.all(
+    fileNames.map(async (fileName) => {
+      const path = join(dir, fileName);
+
+      return {
+        content: await readFile(path, "utf8"),
+        path,
+        target: `${targetDir}/${fileName}`,
+        type: "registry:component",
+      };
+    }),
+  );
+};
+
+const componentFiles = await readComponentFiles(
+  componentDir,
+  "components/streamdown-recharts",
 );
-const exampleContent = await readFile(examplePath, "utf8");
+const bpmnComponentFiles = await readComponentFiles(
+  bpmnComponentDir,
+  "components/streamdown-bpmn",
+);
 
 const componentItem = {
   $schema: "https://ui.shadcn.com/schema/registry-item.json",
@@ -28,6 +38,7 @@ const componentItem = {
   description:
     "A Streamdown custom renderer for recharts-json code fences with chart/table views and exports.",
   type: "registry:component",
+  categories: ["streamdown", "ai", "charts", "data-visualization", "recharts"],
   dependencies: [
     "@e965/xlsx",
     "html-to-image",
@@ -56,46 +67,33 @@ const componentItem = {
   files: componentFiles,
 };
 
-const exampleItem = {
+const bpmnComponentItem = {
   $schema: "https://ui.shadcn.com/schema/registry-item.json",
-  name: "streamdown-recharts-demo",
-  title: "Streamdown Recharts Demo",
-  description: "Example usage of the Streamdown Recharts renderer.",
-  type: "registry:block",
-  dependencies: ["streamdown"],
-  registryDependencies: [`${registryBase}/streamdown-recharts.json`],
-  files: [
-    {
-      path: examplePath,
-      target: "components/streamdown-recharts-demo.tsx",
-      type: "registry:block",
-      content: exampleContent,
-    },
-  ],
+  name: "streamdown-bpmn",
+  title: "Streamdown BPMN",
+  description:
+    "A Streamdown custom renderer for bpmn code fences that renders interactive BPMN diagrams with zoom, fullscreen, and SVG/BPMN export.",
+  type: "registry:component",
+  categories: ["streamdown", "ai", "bpmn", "diagrams", "workflow"],
+  dependencies: ["bpmn-js", "lucide-react", "streamdown"],
+  files: bpmnComponentFiles,
 };
+
+const toRegistryItem = (item) => ({
+  name: item.name,
+  title: item.title,
+  description: item.description,
+  type: item.type,
+  ...(item.categories ? { categories: item.categories } : {}),
+  files: item.files.map(({ content, ...file }) => file),
+});
 
 const registry = {
   name: "streamdown-recharts-registry",
   homepage: repoUrl,
-  items: [
-    {
-      name: componentItem.name,
-      title: componentItem.title,
-      description: componentItem.description,
-      type: componentItem.type,
-      files: componentItem.files.map(({ content, ...file }) => file),
-    },
-    {
-      name: exampleItem.name,
-      title: exampleItem.title,
-      description: exampleItem.description,
-      type: exampleItem.type,
-      files: exampleItem.files.map(({ content, ...file }) => file),
-    },
-  ],
+  items: [toRegistryItem(componentItem), toRegistryItem(bpmnComponentItem)],
 };
 
 await writeFile("registry/streamdown-recharts.json", `${JSON.stringify(componentItem, null, 2)}\n`);
-await writeFile("registry/streamdown-recharts-demo.json", `${JSON.stringify(exampleItem, null, 2)}\n`);
-await writeFile("registry/all.json", `${JSON.stringify(componentItem, null, 2)}\n`);
+await writeFile("registry/streamdown-bpmn.json", `${JSON.stringify(bpmnComponentItem, null, 2)}\n`);
 await writeFile("registry/registry.json", `${JSON.stringify(registry, null, 2)}\n`);
