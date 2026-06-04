@@ -168,9 +168,7 @@ const result = streamText({ model, system: bpmnSystemPrompt, messages });
 | --- | --- |
 | `registry/registry.json` | Registry index (all items) |
 | `registry/streamdown-recharts.json` | Recharts renderer component |
-| `registry/streamdown-recharts-demo.json` | Recharts usage example |
 | `registry/streamdown-bpmn.json` | BPMN renderer component |
-| `registry/streamdown-bpmn-demo.json` | BPMN usage example |
 
 Regenerate the JSON after editing any source under `registry/default/`:
 
