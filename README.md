@@ -123,6 +123,12 @@ remaining XML arrives, open elements are temporarily closed before each
 `bpmn-js` import. The original XML is used unchanged once the closing
 `definitions` tag arrives.
 
+The viewer keeps one persistent `bpmn-js` instance and coalesces queued stream
+updates to the latest snapshot. It auto-fits while the diagram grows until the
+user pans or zooms, then preserves that viewport across later imports, matching
+the interaction behavior of Streamdown's Mermaid renderer. Resetting the view
+returns it to auto-fit mode.
+
 ### Install
 
 ```bash
