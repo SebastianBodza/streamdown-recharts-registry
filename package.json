@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "build:registry": "node scripts/build-registry.mjs",
-    "check:registry": "npm run build:registry && node -e \"JSON.parse(require('node:fs').readFileSync('registry/streamdown-recharts.json', 'utf8'))\""
+    "check:registry": "npm run build:registry && node -e \"for (const file of ['registry/streamdown-recharts.json', 'registry/streamdown-bpmn.json', 'registry/registry.json']) JSON.parse(require('node:fs').readFileSync(file, 'utf8'))\"",
+    "test": "vitest run"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "vitest": "^4.1.9"
+  }
 }

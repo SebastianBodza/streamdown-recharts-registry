@@ -22,9 +22,10 @@ inside a streamed Markdown message.
 | [Streamdown Recharts](#streamdown-recharts) | ` ```recharts-json ` | Bar, line, area, pie &amp; scatter charts with a table view and CSV/XLSX/PNG export |
 | [Streamdown BPMN](#streamdown-bpmn) | ` ```bpmn ` | Interactive BPMN 2.0 diagrams with pan, zoom, fullscreen and SVG/BPMN export |
 
-Both are **streaming-aware**: while a fence is still arriving they show a skeleton
-instead of flashing a parse error, then upgrade to the live component once the
-block closes.
+Both are **streaming-aware**. Recharts shows a skeleton until its fence closes.
+BPMN shows a skeleton until the first complete diagram-interchange shape arrives,
+then progressively renders repaired XML snapshots while the rest of the process
+diagram streams in.
 
 ---
 
@@ -113,6 +114,14 @@ const result = streamText({ model, system: chartSystemPrompt, messages });
 The model emits a fenced `bpmn` block with standard BPMN 2.0 XML (including the
 `<bpmndi:BPMNDiagram>` layout); the renderer mounts an interactive
 [bpmn.io](https://bpmn.io) viewer with pan, zoom, fullscreen and SVG/BPMN export.
+
+### Progressive rendering
+
+The BPMN renderer starts drawing as soon as the streamed XML contains a
+`BPMNDiagram`, `BPMNPlane`, and one `BPMNShape` with complete bounds. While the
+remaining XML arrives, open elements are temporarily closed before each
+`bpmn-js` import. The original XML is used unchanged once the closing
+`definitions` tag arrives.
 
 ### Install
 
