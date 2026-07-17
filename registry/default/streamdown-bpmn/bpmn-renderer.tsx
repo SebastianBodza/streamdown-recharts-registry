@@ -35,8 +35,8 @@ type BpmnCanvas = {
 };
 
 const ZOOM_STEP = 0.1;
-const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 3;
+const MIN_ZOOM_FACTOR = 0.5;
+const MAX_ZOOM_FACTOR = 3;
 const COPY_RESET_MS = 2000;
 
 const getErrorMessage = (error: unknown): string =>
@@ -83,6 +83,7 @@ const BpmnViewport = ({
   const canvasRef = useRef<BpmnCanvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const enqueueImportRef = useRef<(nextCode: string) => void>(() => undefined);
+  const fitZoomRef = useRef(1);
   const hasRenderedRef = useRef(false);
   const onViewerReadyRef = useRef(onViewerReady);
   const userAdjustedViewportRef = useRef(false);
@@ -103,7 +104,7 @@ const BpmnViewport = ({
 
     userAdjustedViewportRef.current = false;
     canvas.resized();
-    canvas.zoom("fit-viewport");
+    fitZoomRef.current = canvas.zoom("fit-viewport");
   }, []);
 
   const zoomBy = useCallback((delta: number) => {
@@ -114,8 +115,13 @@ const BpmnViewport = ({
     }
 
     userAdjustedViewportRef.current = true;
-    const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, canvas.zoom() + delta));
-    canvas.zoom(nextZoom);
+    const fitZoom = fitZoomRef.current;
+    const currentZoomFactor = canvas.zoom() / fitZoom;
+    const nextZoomFactor = Math.min(
+      MAX_ZOOM_FACTOR,
+      Math.max(MIN_ZOOM_FACTOR, currentZoomFactor + delta),
+    );
+    canvas.zoom(fitZoom * nextZoomFactor);
   }, []);
 
   useEffect(() => {
@@ -133,6 +139,7 @@ const BpmnViewport = ({
     let importing = false;
 
     canvasRef.current = null;
+    fitZoomRef.current = 1;
     hasRenderedRef.current = false;
     userAdjustedViewportRef.current = false;
 
@@ -166,11 +173,10 @@ const BpmnViewport = ({
           const nextCanvas = viewer.get<BpmnCanvas>("canvas");
           canvasRef.current = nextCanvas;
           nextCanvas.resized();
+          fitZoomRef.current = nextCanvas.zoom("fit-viewport");
 
           if (previousViewbox && userAdjustedViewportRef.current) {
             nextCanvas.viewbox(previousViewbox);
-          } else {
-            nextCanvas.zoom("fit-viewport");
           }
 
           hasRenderedRef.current = true;
