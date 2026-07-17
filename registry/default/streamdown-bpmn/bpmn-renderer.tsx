@@ -21,8 +21,16 @@ import {
   mendBpmn,
 } from "./bpmn-utils";
 
+type BpmnViewbox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 type BpmnCanvas = {
   resized: () => void;
+  viewbox: (box?: BpmnViewbox) => BpmnViewbox;
   zoom: (value?: number | "fit-viewport") => number;
 };
 
@@ -74,8 +82,17 @@ const BpmnViewport = ({
 }: BpmnViewportProps) => {
   const canvasRef = useRef<BpmnCanvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const enqueueImportRef = useRef<(nextCode: string) => void>(() => undefined);
+  const hasRenderedRef = useRef(false);
+  const onViewerReadyRef = useRef(onViewerReady);
+  const userAdjustedViewportRef = useRef(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [hasRendered, setHasRendered] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    onViewerReadyRef.current = onViewerReady;
+  }, [onViewerReady]);
 
   const resetView = useCallback(() => {
     const canvas = canvasRef.current;
@@ -84,6 +101,7 @@ const BpmnViewport = ({
       return;
     }
 
+    userAdjustedViewportRef.current = false;
     canvas.resized();
     canvas.zoom("fit-viewport");
   }, []);
@@ -95,6 +113,7 @@ const BpmnViewport = ({
       return;
     }
 
+    userAdjustedViewportRef.current = true;
     const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, canvas.zoom() + delta));
     canvas.zoom(nextZoom);
   }, []);
@@ -110,12 +129,74 @@ const BpmnViewport = ({
     let viewer: Viewer | null = null;
     let resizeObserver: ResizeObserver | null = null;
     let resizeFrame = 0;
+    let pendingCode: string | null = null;
+    let importing = false;
 
     canvasRef.current = null;
-    setErrorMessage("");
-    setIsLoading(true);
+    hasRenderedRef.current = false;
+    userAdjustedViewportRef.current = false;
 
-    const renderBpmn = async () => {
+    const importPendingCode = async () => {
+      if (cancelled || importing || !viewer) {
+        return;
+      }
+
+      importing = true;
+
+      while (!cancelled && viewer && pendingCode !== null) {
+        const nextCode = pendingCode;
+        pendingCode = null;
+        const canvas = viewer.get<BpmnCanvas>("canvas");
+        const previousViewbox =
+          hasRenderedRef.current && userAdjustedViewportRef.current
+            ? canvas.viewbox()
+            : null;
+
+        if (!hasRenderedRef.current) {
+          setIsLoading(true);
+        }
+
+        try {
+          await viewer.importXML(nextCode);
+
+          if (cancelled) {
+            break;
+          }
+
+          const nextCanvas = viewer.get<BpmnCanvas>("canvas");
+          canvasRef.current = nextCanvas;
+          nextCanvas.resized();
+
+          if (previousViewbox && userAdjustedViewportRef.current) {
+            nextCanvas.viewbox(previousViewbox);
+          } else {
+            nextCanvas.zoom("fit-viewport");
+          }
+
+          hasRenderedRef.current = true;
+          setErrorMessage("");
+          setHasRendered(true);
+          setIsLoading(false);
+          onViewerReadyRef.current?.(viewer);
+        } catch (error) {
+          // A newer streamed snapshot supersedes transient import failures.
+          if (!cancelled && pendingCode === null) {
+            setErrorMessage(getErrorMessage(error));
+            setIsLoading(false);
+          }
+        }
+      }
+
+      importing = false;
+    };
+
+    enqueueImportRef.current = (nextCode: string) => {
+      pendingCode = nextCode;
+      setErrorMessage("");
+      void importPendingCode();
+    };
+
+    const createViewer = async () => {
       const { default: BpmnViewer } = await import(
         "bpmn-js/dist/bpmn-navigated-viewer.production.min.js"
       );
@@ -124,12 +205,10 @@ const BpmnViewport = ({
         return;
       }
 
-      viewer = new BpmnViewer({ container });
-      await viewer.importXML(code);
-
-      const canvas = viewer.get<BpmnCanvas>("canvas");
+      const createdViewer = new BpmnViewer({ container });
+      viewer = createdViewer;
+      const canvas = createdViewer.get<BpmnCanvas>("canvas");
       canvasRef.current = canvas;
-      canvas.resized();
 
       // Debounce resize callbacks to one per frame. Calling canvas.resized()
       // synchronously inside the observer can re-trigger the observer and pin
@@ -139,17 +218,10 @@ const BpmnViewport = ({
         resizeFrame = window.requestAnimationFrame(() => canvas.resized());
       });
       resizeObserver.observe(container);
-
-      if (cancelled) {
-        return;
-      }
-
-      canvas.zoom("fit-viewport");
-      setIsLoading(false);
-      onViewerReady?.(viewer);
+      void importPendingCode();
     };
 
-    renderBpmn().catch((error) => {
+    createViewer().catch((error) => {
       if (!cancelled) {
         setErrorMessage(getErrorMessage(error));
         setIsLoading(false);
@@ -160,34 +232,20 @@ const BpmnViewport = ({
       cancelled = true;
       window.cancelAnimationFrame(resizeFrame);
       resizeObserver?.disconnect();
+      enqueueImportRef.current = () => undefined;
       canvasRef.current = null;
-      onViewerReady?.(null);
+      onViewerReadyRef.current?.(null);
       viewer?.destroy();
       container.replaceChildren();
     };
-  }, [code, onViewerReady]);
+  }, []);
 
-  if (errorMessage) {
-    if (streaming) {
-      return (
-        <div className="relative flex h-full w-full flex-col overflow-hidden">
-          <BpmnLoadingIndicator />
-        </div>
-      );
-    }
+  useEffect(() => {
+    enqueueImportRef.current(code);
+  }, [code]);
 
-    return (
-      <div className="rounded-md bg-red-50 p-4">
-        <p className="font-mono text-red-700 text-sm">BPMN Error: {errorMessage}</p>
-        <details className="mt-2">
-          <summary className="cursor-pointer text-red-600 text-xs">Show Code</summary>
-          <pre className="mt-2 overflow-x-auto rounded bg-red-100 p-2 text-red-800 text-xs">
-            {code}
-          </pre>
-        </details>
-      </div>
-    );
-  }
+  const showLoading = isLoading || (streaming && errorMessage && !hasRendered);
+  const showError = errorMessage && !streaming;
 
   return (
     <div className="relative flex h-full w-full flex-col overflow-hidden">
@@ -199,7 +257,7 @@ const BpmnViewport = ({
       >
         <button
           className={CONTROL_BUTTON_CLASS}
-          disabled={isLoading}
+          disabled={!hasRendered}
           onClick={() => zoomBy(ZOOM_STEP)}
           title="Zoom in"
           type="button"
@@ -208,7 +266,7 @@ const BpmnViewport = ({
         </button>
         <button
           className={CONTROL_BUTTON_CLASS}
-          disabled={isLoading}
+          disabled={!hasRendered}
           onClick={() => zoomBy(-ZOOM_STEP)}
           title="Zoom out"
           type="button"
@@ -217,7 +275,7 @@ const BpmnViewport = ({
         </button>
         <button
           className={CONTROL_BUTTON_CLASS}
-          disabled={isLoading}
+          disabled={!hasRendered}
           onClick={resetView}
           title="Reset zoom and pan"
           type="button"
@@ -225,14 +283,31 @@ const BpmnViewport = ({
           <RotateCcwIcon size={16} />
         </button>
       </div>
-      {isLoading ? (
-        <div className="absolute inset-0 z-0">
+      {showLoading && !hasRendered ? (
+        <div className="absolute inset-0 z-[1] bg-background">
           <BpmnLoadingIndicator />
+        </div>
+      ) : null}
+      {showError ? (
+        <div className="absolute inset-0 z-[2] overflow-auto rounded-md bg-red-50 p-4">
+          <p className="font-mono text-red-700 text-sm">BPMN Error: {errorMessage}</p>
+          <details className="mt-2">
+            <summary className="cursor-pointer text-red-600 text-xs">Show Code</summary>
+            <pre className="mt-2 overflow-x-auto rounded bg-red-100 p-2 text-red-800 text-xs">
+              {code}
+            </pre>
+          </details>
         </div>
       ) : null}
       <div
         className="h-full w-full [&_.bjs-powered-by]:hidden"
         data-streamdown="bpmn-canvas"
+        onPointerDownCapture={() => {
+          userAdjustedViewportRef.current = true;
+        }}
+        onWheelCapture={() => {
+          userAdjustedViewportRef.current = true;
+        }}
         ref={containerRef}
       />
     </div>
@@ -364,7 +439,13 @@ const BpmnCopyButton = ({ code }: { code: string }) => {
   );
 };
 
-const BpmnFullscreenButton = ({ code }: { code: string }) => {
+const BpmnFullscreenButton = ({
+  code,
+  streaming = false,
+}: {
+  code: string;
+  streaming?: boolean;
+}) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -418,7 +499,7 @@ const BpmnFullscreenButton = ({ code }: { code: string }) => {
                 <XIcon size={20} />
               </button>
               <div className="flex size-full items-center justify-center p-4">
-                <BpmnViewport code={code} fullscreen />
+                <BpmnViewport code={code} fullscreen streaming={streaming} />
               </div>
             </div>,
             document.body
@@ -462,7 +543,7 @@ export const BpmnRenderer = ({
         <>
           <BpmnDownloadButton code={renderCode} getViewer={getViewer} />
           <BpmnCopyButton code={renderCode} />
-          <BpmnFullscreenButton code={renderCode} />
+          <BpmnFullscreenButton code={renderCode} streaming={!complete} />
         </>
       }
       language={language}
