@@ -15,6 +15,11 @@ import {
   ZoomOutIcon,
 } from "lucide-react";
 import type { CustomRenderer, CustomRendererProps } from "streamdown";
+import {
+  hasRenderableBpmnDiagram,
+  isBpmnComplete,
+  mendBpmn,
+} from "./bpmn-utils";
 
 type BpmnCanvas = {
   resized: () => void;
@@ -28,16 +33,6 @@ const COPY_RESET_MS = 2000;
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
-
-const isIncompleteBpmn = (code: string, isIncomplete?: boolean): boolean => {
-  const trimmedCode = code.trim();
-
-  return (
-    isIncomplete ||
-    trimmedCode === "" ||
-    !/<\/(?:[a-z0-9_-]+:)?definitions>\s*$/i.test(trimmedCode)
-  );
-};
 
 const downloadFile = (filename: string, content: string, mimeType: string) => {
   const blob = new Blob([content], { type: mimeType });
@@ -67,10 +62,16 @@ const BpmnLoadingIndicator = () => (
 type BpmnViewportProps = {
   code: string;
   fullscreen?: boolean;
+  streaming?: boolean;
   onViewerReady?: (viewer: Viewer | null) => void;
 };
 
-const BpmnViewport = ({ code, fullscreen = false, onViewerReady }: BpmnViewportProps) => {
+const BpmnViewport = ({
+  code,
+  fullscreen = false,
+  streaming = false,
+  onViewerReady,
+}: BpmnViewportProps) => {
   const canvasRef = useRef<BpmnCanvas | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -167,6 +168,14 @@ const BpmnViewport = ({ code, fullscreen = false, onViewerReady }: BpmnViewportP
   }, [code, onViewerReady]);
 
   if (errorMessage) {
+    if (streaming) {
+      return (
+        <div className="relative flex h-full w-full flex-col overflow-hidden">
+          <BpmnLoadingIndicator />
+        </div>
+      );
+    }
+
     return (
       <div className="rounded-md bg-red-50 p-4">
         <p className="font-mono text-red-700 text-sm">BPMN Error: {errorMessage}</p>
@@ -360,7 +369,9 @@ const BpmnFullscreenButton = ({ code }: { code: string }) => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const frame = window.requestAnimationFrame(() => setIsMounted(true));
+
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -417,7 +428,11 @@ const BpmnFullscreenButton = ({ code }: { code: string }) => {
   );
 };
 
-export const BpmnRenderer = ({ code, language, isIncomplete }: CustomRendererProps) => {
+export const BpmnRenderer = ({
+  code,
+  language,
+  isIncomplete,
+}: CustomRendererProps) => {
   const viewerRef = useRef<Viewer | null>(null);
 
   const handleViewerReady = useCallback((viewer: Viewer | null) => {
@@ -426,7 +441,7 @@ export const BpmnRenderer = ({ code, language, isIncomplete }: CustomRendererPro
 
   const getViewer = useCallback(() => viewerRef.current, []);
 
-  if (isIncompleteBpmn(code, isIncomplete)) {
+  if (!hasRenderableBpmnDiagram(code)) {
     return (
       <BpmnBlockShell language={language}>
         <div className="rounded-md border border-border bg-background">
@@ -438,20 +453,27 @@ export const BpmnRenderer = ({ code, language, isIncomplete }: CustomRendererPro
     );
   }
 
+  const complete = !isIncomplete && isBpmnComplete(code);
+  const renderCode = complete ? code : mendBpmn(code);
+
   return (
     <BpmnBlockShell
       actions={
         <>
-          <BpmnDownloadButton code={code} getViewer={getViewer} />
-          <BpmnCopyButton code={code} />
-          <BpmnFullscreenButton code={code} />
+          <BpmnDownloadButton code={renderCode} getViewer={getViewer} />
+          <BpmnCopyButton code={renderCode} />
+          <BpmnFullscreenButton code={renderCode} />
         </>
       }
       language={language}
     >
       <div className="rounded-md border border-border bg-background">
         <div className="relative h-[520px] w-full resize-y overflow-hidden">
-          <BpmnViewport code={code} onViewerReady={handleViewerReady} />
+          <BpmnViewport
+            code={renderCode}
+            onViewerReady={handleViewerReady}
+            streaming={!complete}
+          />
         </div>
       </div>
     </BpmnBlockShell>

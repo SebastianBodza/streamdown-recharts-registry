@@ -96,6 +96,11 @@
           "type": "registry:component"
         },
         {
+          "path": "registry/default/streamdown-bpmn/bpmn-utils.ts",
+          "target": "components/streamdown-bpmn/bpmn-utils.ts",
+          "type": "registry:component"
+        },
+        {
           "path": "registry/default/streamdown-bpmn/bpmn.css",
           "target": "components/streamdown-bpmn/bpmn.css",
           "type": "registry:component"
