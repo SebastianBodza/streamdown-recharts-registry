@@ -34,9 +34,9 @@ type BpmnCanvas = {
   zoom: (value?: number | "fit-viewport") => number;
 };
 
-const ZOOM_STEP = 0.2;
-const MIN_ZOOM = 0.2;
-const MAX_ZOOM = 4;
+const ZOOM_STEP = 0.1;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 3;
 const COPY_RESET_MS = 2000;
 
 const getErrorMessage = (error: unknown): string =>
